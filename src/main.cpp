@@ -18,8 +18,8 @@ const int SS_demux_C = 17;  // najstarszy bit C
 const int SS_demux_G = 5;  // najstarszy bit C
 
 // Demux RS (reset)
-const int RS_demux_A = 32;  // najmlodszy bit A
-const int RS_demux_B = 33;  // B
+const int RS_demux_A = 33;  // najmlodszy bit A
+const int RS_demux_B = 32;  // B
 const int RS_demux_C = 4;  // najstarszy bit C
 const int RS_demux_G = 16; // demux enable
 
@@ -31,9 +31,10 @@ void dump_byte_array(byte * buffer, byte bufferSize);
 void pinModeSetup();
 void PCD_PrintUID();
 void demuxChange();
+void oneAntennaTest();
 
 // Create an MFRC522 instance :
-MFRC522 rfid(SS_demux_G, RS_demux_G);
+MFRC522 rfid(13, 14);
 
 // Algorytm:
 // 1. najpierw demuxy nieaktywne w setupie przez 50ms 
@@ -49,15 +50,35 @@ void setup() {
   SPI.begin();                  // Init SPI bus
   pinModeSetup();
   delay(500);
-  digitalWrite(RS_demux_G, HIGH);
-  digitalWrite(SS_demux_G, HIGH);
+
 }
 
 void loop() {
-  demuxChange();
+  oneAntennaTest();
 }
 
+void oneAntennaTest() {
+  // demux activation
+  digitalWrite(RS_demux_G, HIGH);
+  digitalWrite(SS_demux_G, HIGH);
+  // demux select Y0
+  digitalWrite(RS_demux_A, 0);
+  digitalWrite(RS_demux_B, 0);
+  digitalWrite(RS_demux_C, 0);
+  digitalWrite(SS_demux_A, 0);
+  digitalWrite(SS_demux_B, 0);
+  digitalWrite(SS_demux_C, 0);
+  delay(500);
+  // Init PCD
+  rfid.PCD_Init();
+  // Show version of PCD - MFRC522 Card Reader
+  rfid.PCD_DumpVersionToSerial();  
+  // demux deactivation
+  digitalWrite(RS_demux_G, LOW);
+  digitalWrite(SS_demux_G, LOW);
+  delay(500);
 
+}
 void demuxChange() {
   // Aktywuj demultipleksery
   // Przełącz demultiplekser RS dla różnych kombinacji pinów A, B i C
@@ -139,14 +160,8 @@ void pinModeSetup() {
   pinMode(RS_demux_C, OUTPUT);
   pinMode(RS_demux_G, OUTPUT);
 
-  digitalWrite(SS_demux_A, LOW);
-  digitalWrite(SS_demux_B, LOW);
-  digitalWrite(SS_demux_C, LOW);
-  digitalWrite(SS_demux_G, LOW);
-  digitalWrite(RS_demux_A, LOW);
-  digitalWrite(RS_demux_B, LOW);
-  digitalWrite(RS_demux_C, LOW);
   digitalWrite(RS_demux_G, LOW);
+  digitalWrite(SS_demux_G, LOW);
 
 }
 
