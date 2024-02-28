@@ -34,7 +34,7 @@ void demuxChange();
 void oneAntennaTest();
 
 // Create an MFRC522 instance :
-MFRC522 rfid(13, 14);
+MFRC522 rfid(SS_demux_G, RS_demux_G);
 
 // Algorytm:
 // 1. najpierw demuxy nieaktywne w setupie przez 50ms 
@@ -47,20 +47,12 @@ MFRC522 rfid(13, 14);
 
 void setup() {
   Serial.begin(9600);           // Initialize serial communications with the PC
-  SPI.begin();                  // Init SPI bus
+  SPI.begin(18, 19, 23);                  // Init SPI bus
   pinModeSetup();
   delay(500);
+  digitalWrite(RS_demux_G, LOW);
+  digitalWrite(SS_demux_G, LOW);
 
-}
-
-void loop() {
-  oneAntennaTest();
-}
-
-void oneAntennaTest() {
-  // demux activation
-  digitalWrite(RS_demux_G, HIGH);
-  digitalWrite(SS_demux_G, HIGH);
   // demux select Y0
   digitalWrite(RS_demux_A, 0);
   digitalWrite(RS_demux_B, 0);
@@ -68,14 +60,30 @@ void oneAntennaTest() {
   digitalWrite(SS_demux_A, 0);
   digitalWrite(SS_demux_B, 0);
   digitalWrite(SS_demux_C, 0);
+  // demux activation
+  digitalWrite(RS_demux_G, HIGH);
+  digitalWrite(SS_demux_G, HIGH);
   delay(500);
+}
+
+void loop() {
+  oneAntennaTest();
+}
+
+void oneAntennaTest() {
   // Init PCD
   rfid.PCD_Init();
   // Show version of PCD - MFRC522 Card Reader
   rfid.PCD_DumpVersionToSerial();  
-  // demux deactivation
-  digitalWrite(RS_demux_G, LOW);
-  digitalWrite(SS_demux_G, LOW);
+  bool result = rfid.PCD_PerformSelfTest(); // perform the test
+  Serial.println(F("-----------------------------"));
+  Serial.print(F("Result: "));
+  if (result)
+    Serial.println(F("OK"));
+  else
+    Serial.println(F("DEFECT or UNKNOWN"));
+  Serial.println();
+
   delay(500);
 
 }
