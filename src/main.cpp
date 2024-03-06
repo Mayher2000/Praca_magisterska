@@ -24,6 +24,7 @@ const byte RS_demux_G = 16; // demux enable
 // GLOBAL VARIABLES 
 /////////////////////////////////////////////////////
 bool twoAntennaFlag = true;
+const byte numberOfAntennas = 8;
 byte activeAntenna = 1;
 /////////////////////////////////////////////////////
 // GLOBAL INSTANCES 
@@ -37,7 +38,7 @@ void dump_byte_array(byte * buffer, byte bufferSize);
 void pinModeSetup();
 void AntennaTestInit();
 void AntennaTestRead();
-void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C, int selectedAntenna);
+void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C);
 void printUID();
 
 
@@ -71,25 +72,47 @@ void AntennaTestRead() {
   // State machine for antennas switching
   switch (activeAntenna){
   case 1:
-    AntennaSelect(SS1_1, 0, 0, 0, 1);
+    AntennaSelect(SS1_1, 0, 0, 0);
     break;
   case 2:
-    AntennaSelect(SS1_2, 0, 0, 0, 2);
+    AntennaSelect(SS1_2, 0, 0, 0);
     break;
   case 3:
-    AntennaSelect(SS1_1, 1, 0, 0, 3);
+    AntennaSelect(SS1_1, 1, 0, 0);
     break;
   case 4:
-    AntennaSelect(SS1_2, 1, 0, 0, 4);
+    AntennaSelect(SS1_2, 1, 0, 0);
+    break;
+  case 5:
+    AntennaSelect(SS1_1, 0, 1, 0);
+    break;
+  case 6:
+    AntennaSelect(SS1_2, 0, 1, 0);
+    break;
+  case 7:
+    AntennaSelect(SS1_1, 1, 1, 0);
+    break;
+  case 8:
+    AntennaSelect(SS1_2, 1, 1, 0);
     break;
   default:
     Serial.println("Invalid antenna number");
     break;
   }
-  // Initing the Antenna 
   rfid.PCD_Init();
-
-  // Looking for a card
+  // TEST //
+  // Initing the Antenna 
+  // rfid.PCD_DumpVersionToSerial();  
+  // bool result = rfid.PCD_PerformSelfTest(); // perform the test
+  // Serial.println(F("-----------------------------"));
+  // Serial.print(F("Result: "));
+  // if (result)
+  //   Serial.println(F("OK"));
+  // else
+  //   Serial.println(F("DEFECT or UNKNOWN"));
+  // Serial.println();
+  // READING //
+  // // Looking for a card
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
     // rfid.PICC_DumpDetailsToSerial(&(rfid.uid)); //dump some details about the card
     printUID();
@@ -115,7 +138,7 @@ void printUID(){
   Serial.println("|");
 }
 
-void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C, int selectedAntenna) {
+void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C) {
     // set SS for Antenna 1
     rfid.PCD_ChangeChipSelectPin(SS);
     // set RST for Antenna 1
@@ -124,11 +147,11 @@ void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C, int selectedAntenna
     digitalWrite(RS_demux_C, RS_C);
     // debug info
     Serial.print("Ant");
-    Serial.print(selectedAntenna);
+    Serial.print(activeAntenna);
     Serial.print(" :");
     // change the state for next iteration
-    if (activeAntenna == 4) activeAntenna = 1;
-    else activeAntenna = selectedAntenna + 1;
+    if (activeAntenna == numberOfAntennas) activeAntenna = 1;
+    else activeAntenna = activeAntenna + 1;
 }
 void AntennaTestInit() {
   // Init PCD
@@ -156,7 +179,7 @@ void AntennaTestInit() {
     Serial.println(F("DEFECT or UNKNOWN"));
   Serial.println();
 
-  delay(500);
+  delay(100);
 
 }
 
