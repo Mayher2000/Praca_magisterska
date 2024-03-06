@@ -37,7 +37,8 @@ void dump_byte_array(byte * buffer, byte bufferSize);
 void pinModeSetup();
 void AntennaTestInit();
 void AntennaTestRead();
-
+void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C, int selectedAntenna);
+void printUID();
 
 
 // Algorytm:
@@ -56,12 +57,6 @@ void setup() {
   Serial.begin(9600);           // Initialize serial communications with the PC
   SPI.begin();                  // Init SPI bus
   pinModeSetup();
-
-  // RST demux select Y0
-  digitalWrite(RS_demux_A, 0);
-  digitalWrite(RS_demux_B, 0);
-  digitalWrite(RS_demux_C, 0);
-  delay(10);
 }
 
 /////////////////////////////////////////////////////
@@ -79,13 +74,13 @@ void AntennaTestRead() {
     AntennaSelect(SS1_1, 0, 0, 0, 1);
     break;
   case 2:
-    AntennaSelect(SS1_2, 0, 0, 0, 1);
+    AntennaSelect(SS1_2, 0, 0, 0, 2);
     break;
   case 3:
-    AntennaSelect(SS1_1, 1, 0, 0, 1);
+    AntennaSelect(SS1_1, 1, 0, 0, 3);
     break;
   case 4:
-    AntennaSelect(SS1_2, 1, 0, 0, 1);
+    AntennaSelect(SS1_2, 1, 0, 0, 4);
     break;
   default:
     Serial.println("Invalid antenna number");
@@ -96,15 +91,28 @@ void AntennaTestRead() {
 
   // Looking for a card
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    Serial.print("|\t");
-    rfid.PICC_DumpDetailsToSerial(&(rfid.uid)); //dump some details about the card
-    Serial.print("\t|");
+    // rfid.PICC_DumpDetailsToSerial(&(rfid.uid)); //dump some details about the card
+    printUID();
     rfid.PICC_HaltA();
     rfid.PCD_StopCrypto1();  
   }
-  else Serial.println("|\tNONE\t|");
-  if (activeAntenna % 2 == 1) Serial.println();
+  else Serial.println("|NONE|");
+  if (activeAntenna == 1) Serial.println("");
   delay(100);
+}
+
+void printUID(){
+  unsigned int hex_num;
+  hex_num =  rfid.uid.uidByte[0] << 24;
+  hex_num += rfid.uid.uidByte[1] << 16;
+  hex_num += rfid.uid.uidByte[2] <<  8;
+  hex_num += rfid.uid.uidByte[3];
+  int  NFC_id = (int)hex_num;
+  String strtwo = String(NFC_id, HEX);
+  strtwo.toUpperCase();
+  Serial.print("|");
+  Serial.print(strtwo);
+  Serial.println("|");
 }
 
 void AntennaSelect(byte SS, byte RS_A, byte RS_B, byte RS_C, int selectedAntenna) {
